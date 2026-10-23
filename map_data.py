@@ -1,12 +1,15 @@
 """Хотын газрын зургийн байршлууд — vault-аас (PC, Mac ижил уншина; repo-д хаяг бичихгүй).
 
-гэр      : 03-Areas/people/*.md — `is-vault-owner: true` + `home: {"name","place","lng","lat"}`
-харилцагч: 03-Areas/Business/*/companies/*.md — `status: active` + `locations: [{"name","project","lng","lat","addr"}]`
+гэр      : 04-Areas/people/*.md (хуучин 03-Areas/people) — `is-vault-owner: true` + `home: {"name","place","lng","lat"}`
+харилцагч: 04-Areas/companies/*.md (хуучин 03-Areas/Business/*/companies/*.md) — `status: active` + `locations: [{"name","project","lng","lat","addr"}]`
            lng/lat-гүй байршил (жишээ нь өөр хот) → unplaced. `status: declined|lost|...` бол огт орохгүй.
 Гаралт нь ub-map.local.json-тай ижил хэлбэр: {"office":[lng,lat],"name","clients":[...],"unplaced":[...]}
 """
 import json, re
 from pathlib import Path
+
+PEOPLE_GLOBS = ["04-Areas/people/*.md", "03-Areas/people/*.md"]  # шинэ байршил эхэнд, хуучин нь fallback
+COMPANY_GLOBS = ["04-Areas/companies/*.md", "03-Areas/Business/*/companies/*.md"]
 
 
 def _fm(text):
@@ -31,12 +34,12 @@ def _json(v):
 def build(vault):
     v = Path(vault)
     out = {"office": None, "name": "Гэр", "clients": [], "unplaced": []}
-    for p in (v / "03-Areas/people").glob("*.md"):
+    for p in (p for g in PEOPLE_GLOBS for p in v.glob(g)):
         fm = _fm(p.read_text(encoding="utf-8", errors="ignore")[:4000])
         if fm.get("is-vault-owner") == "true" and (h := _json(fm.get("home"))) and h.get("lng") is not None:
             out["office"], out["name"] = [h["lng"], h["lat"]], h.get("name", "Гэр")
             out["home_place"] = h.get("place", "")
-    for p in sorted(v.glob("03-Areas/Business/*/companies/*.md")):
+    for p in sorted(p for g in COMPANY_GLOBS for p in v.glob(g)):
         fm = _fm(p.read_text(encoding="utf-8", errors="ignore")[:6000])
         if fm.get("status", "").strip('"') != "active":
             continue
