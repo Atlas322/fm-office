@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+ub-map.local.json
+fm-office.json
+design-ref/*.png
+.DS_Store
